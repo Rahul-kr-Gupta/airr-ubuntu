@@ -1,0 +1,103 @@
+============================================================
+📥 FILES TO DOWNLOAD FROM REPLIT TO UBUNTU
+============================================================
+
+Download all these files to your Ubuntu PC at: ~/airr-scraper/
+
+File Tree:
+============================================================
+
+~/airr-scraper/
+│
+├── 🔥 CORE SCRIPTS (Required - Download All)
+│   ├── daily_scraper.py                    (7.0K)  ✅
+│   ├── scrape_products_with_cookies.py     (18K)   ✅
+│   ├── login_and_save_cookies_.py          (6.4K)  ✅
+│   ├── upload_to_database.py               (10K)   ✅
+│   └── clean_all_data.py                   (3.2K)  ✅
+│
+├── 📊 DATA FILES (Required - Critical!)
+│   ├── airr_sku_rows.csv                   (60K)   ✅ CRITICAL!
+│   └── requirements.txt                    (200B)  ✅
+│
+├── ⚙️  CONFIGURATION (Required)
+│   └── .env.example                        (850B)  ✅
+│
+├── 🚀 UBUNTU SETUP HELPERS (Highly Recommended)
+│   ├── ubuntu_setup.sh                     (3.0K)  ⭐ Auto-setup
+│   ├── test_setup.py                       (4.5K)  ⭐ Verify install
+│   ├── README_UBUNTU.md                    (6.2K)  ⭐ Quick start
+│   └── UBUNTU_CHECKLIST.md                 (5.0K)  ⭐ Step-by-step
+│
+└── 📖 DOCUMENTATION (Recommended)
+    ├── UBUNTU_SETUP.md                     (11K)   Complete guide
+    ├── DOWNLOAD_GUIDE.md                   (3.9K)  Download help
+    ├── CLEAN_AND_RESTART.md                (3.6K)  Cleanup guide
+    └── DATABASE_SETUP.md                   (6.8K)  Database info
+
+Files NOT needed on Ubuntu:
+============================================================
+✗ cookies.json              (will be generated on Ubuntu)
+✗ airr_product_data.csv     (will be generated on Ubuntu)
+✗ scrape_checkpoint.json    (will be generated on Ubuntu)
+✗ error_screenshot.png      (temp debugging file)
+
+Total files to download: ~17 files
+Total size: ~150KB
+
+============================================================
+DOWNLOAD METHODS
+============================================================
+
+Method 1: Download as ZIP (Easiest)
+------------------------------------
+1. In Replit, click ☰ menu → "Download as zip"
+2. On Ubuntu: unzip airr-scraper.zip -d ~/airr-scraper
+
+Method 2: Download Individual Files
+------------------------------------
+1. Click each file in Replit
+2. Click ⋮ menu → Download
+3. Save to ~/airr-scraper/
+
+Method 3: Git Clone (if configured)
+------------------------------------
+git clone <your-repo-url> ~/airr-scraper
+
+============================================================
+AFTER DOWNLOADING
+============================================================
+
+1. Verify files downloaded:
+   cd ~/airr-scraper
+   ls -la
+
+2. Run automated setup:
+   ./ubuntu_setup.sh
+
+3. Or check what you have:
+   python3 test_setup.py
+
+============================================================
+PRIORITY FILES (Minimum to Start)
+============================================================
+
+If you want to start with just the essentials:
+
+MUST HAVE:
+  ✓ daily_scraper.py
+  ✓ scrape_products_with_cookies.py
+  ✓ login_and_save_cookies_.py
+  ✓ upload_to_database.py
+  ✓ airr_sku_rows.csv              ← DON'T FORGET THIS!
+  ✓ requirements.txt
+  ✓ .env.example
+
+HIGHLY RECOMMENDED:
+  ✓ ubuntu_setup.sh                ← Makes setup easy
+  ✓ test_setup.py                  ← Verifies everything works
+  ✓ README_UBUNTU.md               ← Quick start guide
+
+With these 10 files, you can run the scraper!
+
+============================================================

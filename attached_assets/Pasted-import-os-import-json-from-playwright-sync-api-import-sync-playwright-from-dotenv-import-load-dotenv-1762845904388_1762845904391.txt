@@ -1,0 +1,113 @@
+import os
+import json
+from playwright.sync_api import sync_playwright
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Get credentials from environment variables
+USERNAME = os.getenv('airr_USERNAME')
+PASSWORD = os.getenv('airr_PASSWORD')
+
+def login_and_save_cookies():
+    """
+    Log into https://orderonline.airr.com.au/ and save all cookies to a file
+    """
+    if not USERNAME or not PASSWORD:
+        print("Error: Credentials not found in environment variables")
+        print("Please ensure airr_USERNAME and airr_PASSWORD are set")
+        return
+    
+    print(f"Starting login process for user: {USERNAME}")
+    
+    with sync_playwright() as p:
+        # Launch browser (headless=True for production, False for debugging)
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+        
+        try:
+            # Navigate to the login page
+            print("Navigating to login page...")
+            page.goto('https://orderonline.airr.com.au/', timeout=60000)
+            
+            # Wait for page to load
+            page.wait_for_load_state('networkidle')
+            
+            # Try to find and fill login form
+            # Note: These selectors may need to be adjusted based on the actual page structure
+            print("Looking for login form...")
+            
+            # Wait for username field (adjust selector as needed)
+            page.wait_for_selector('input[type="text"], input[name*="user"], input[id*="user"]', timeout=10000)
+            
+            # Fill in username
+            print("Entering username...")
+            username_field = page.locator('input[type="text"], input[name*="user"], input[id*="user"]').first
+            username_field.fill(USERNAME)
+            
+            # Fill in password
+            print("Entering password...")
+            password_field = page.locator('input[type="password"]').first
+            password_field.fill(PASSWORD)
+            
+            # Click login button
+            print("Clicking login button...")
+            login_button = page.locator('button[type="submit"], input[type="submit"], button:has-text("Login"), button:has-text("Sign in")').first
+            login_button.click()
+            
+            # Wait for navigation after login
+            print("Waiting for login to complete...")
+            page.wait_for_load_state('networkidle', timeout=30000)
+            page.wait_for_timeout(3000)
+            
+            # Check if login was successful (adjust based on actual behavior)
+            current_url = page.url
+            print(f"Current URL after login: {current_url}")
+            
+            # Get all cookies from the browser context
+            cookies = context.cookies()
+            
+            # Get localStorage data (important for this site!)
+            local_storage = page.evaluate('() => Object.assign({}, window.localStorage)')
+            
+            # Get sessionStorage data as well
+            session_storage = page.evaluate('() => Object.assign({}, window.sessionStorage)')
+            
+            # Save all authentication data to a JSON file
+            auth_data = {
+                'cookies': cookies,
+                'localStorage': local_storage,
+                'sessionStorage': session_storage,
+                'url': current_url
+            }
+            
+            auth_file = 'cookies.json'
+            with open(auth_file, 'w') as f:
+                json.dump(auth_data, f, indent=2)
+            
+            print(f"\n✓ Success! Saved authentication data to {auth_file}")
+            print(f"\nAuthentication data:")
+            print(f"  - Cookies: {len(cookies)}")
+            print(f"  - localStorage items: {len(local_storage)}")
+            print(f"  - sessionStorage items: {len(session_storage)}")
+            
+            if local_storage:
+                print(f"\nlocalStorage keys: {', '.join(local_storage.keys())}")
+            
+        except Exception as e:
+            print(f"\n✗ Error during login: {str(e)}")
+            print("\nTaking screenshot for debugging...")
+            page.screenshot(path='error_screenshot.png')
+            print("Screenshot saved as error_screenshot.png")
+            
+            # Print page content for debugging
+            print("\nPage title:", page.title())
+            print("Current URL:", page.url)
+            
+        finally:
+            browser.close()
+
+if __name__ == "__main__":
+    login_and_save_cookies()
