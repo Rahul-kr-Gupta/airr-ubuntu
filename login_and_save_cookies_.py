@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get credentials from environment variables
-USERNAME = os.getenv('airr_USERNAME')
-PASSWORD = os.getenv('airr_PASSWORD')
+USERNAME = "WEBBARRY"
+PASSWORD = "Petfood#123"
 
 def ensure_playwright_browsers():
     """Ensure Playwright browsers are installed"""

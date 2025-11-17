@@ -39,8 +39,8 @@ def refresh_authentication(page):
     """Refresh authentication by re-logging in"""
     print("\n🔄 Refreshing authentication...")
     try:
-        USERNAME = os.getenv('airr_USERNAME')
-        PASSWORD = os.getenv('airr_PASSWORD')
+        USERNAME = "WEBBARRY"
+        PASSWORD = "Petfood#123"
         
         if not USERNAME or not PASSWORD:
             print("  ✗ Credentials not found")
@@ -259,8 +259,8 @@ def scrape_all_products(product_codes, auth_data, output_file='airr_product_data
         try:
             # Perform fresh login to get active token
             print("Performing fresh login...")
-            USERNAME = os.getenv('airr_USERNAME')
-            PASSWORD = os.getenv('airr_PASSWORD')
+            USERNAME = "WEBBARRY"
+            PASSWORD = "Petfood#123"
             
             if not USERNAME or not PASSWORD:
                 print("✗ Credentials not found!")
