@@ -9,11 +9,11 @@ from datetime import datetime
 load_dotenv()
 
 DB_CONFIG = {
-    'host': os.getenv('SUPABASE_HOST'),
-    'dbname': os.getenv('SUPABASE_DBNAME'),
-    'user': os.getenv('SUPABASE_USER'),
-    'password': os.getenv('SUPABASE_PASSWORD'),
-    'port': os.getenv('SUPABASE_PORT'),
+    'host': "aws-1-ap-south-1.pooler.supabase.com",
+    'dbname': "postgres",
+    'user': "postgres.odpysbkgdzwcnwkrwrsw",
+    'password': "IqxEqdiLbFJmEISw",
+    'port': 6543,
     'sslmode': 'require'
 }
 
