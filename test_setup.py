@@ -50,12 +50,14 @@ def test_env_file():
     
     print("✓ .env file exists")
     
-    # Load .env
+    # Load .env from script directory
     try:
+        from pathlib import Path
         from dotenv import load_dotenv
-        load_dotenv()
-    except:
-        print("✗ Could not load .env file")
+        env_path = Path(__file__).parent / '.env'
+        load_dotenv(dotenv_path=env_path)
+    except Exception as e:
+        print(f"✗ Could not load .env file: {e}")
         return False
     
     required_vars = [

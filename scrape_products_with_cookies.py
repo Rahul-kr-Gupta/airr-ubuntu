@@ -3,8 +3,23 @@ import sys
 import json
 import time
 from datetime import datetime
+from pathlib import Path
 from playwright.sync_api import sync_playwright
 import pandas as pd
+import psycopg2
+from psycopg2.extras import execute_values
+from dotenv import load_dotenv
+
+# Load environment variables from .env file in script directory
+env_path = Path(__file__).parent / '.env'
+load_dotenv(dotenv_path=env_path)
+
+# Debug: Check if .env was loaded
+if not os.getenv('SUPABASE_HOST'):
+    print(f"⚠️  WARNING: .env file not found or empty!")
+    print(f"   Expected location: {env_path.absolute()}")
+    print(f"   Current working directory: {os.getcwd()}")
+    print(f"   Please ensure .env file exists with all credentials\n")
 
 # Force unbuffered output for real-time logs
 if hasattr(sys.stdout, 'reconfigure'):
@@ -39,8 +54,8 @@ def refresh_authentication(page):
     """Refresh authentication by re-logging in"""
     print("\n🔄 Refreshing authentication...")
     try:
-        USERNAME = "WEBBARRY"
-        PASSWORD = "Petfood#123"
+        USERNAME = os.getenv('airr_USERNAME')
+        PASSWORD = os.getenv('airr_PASSWORD')
         
         if not USERNAME or not PASSWORD:
             print("  ✗ Credentials not found")
@@ -238,6 +253,9 @@ def scrape_all_products(product_codes, auth_data, output_file='airr_product_data
     print(f"Using warehouse: {warehouse}")
     print(f"Initial token: {token[:20] if len(token) > 20 else token}...\n")
     
+    # Initialize database connection for live updates
+    db_conn = init_database()
+    
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
@@ -259,8 +277,8 @@ def scrape_all_products(product_codes, auth_data, output_file='airr_product_data
         try:
             # Perform fresh login to get active token
             print("Performing fresh login...")
-            USERNAME = "WEBBARRY"
-            PASSWORD = "Petfood#123"
+            USERNAME = os.getenv('airr_USERNAME')
+            PASSWORD = os.getenv('airr_PASSWORD')
             
             if not USERNAME or not PASSWORD:
                 print("✗ Credentials not found!")
@@ -337,6 +355,9 @@ def scrape_all_products(product_codes, auth_data, output_file='airr_product_data
                 
                 if product_data:
                     scraped_data.append(product_data)
+                    
+                    # Upload to database in real-time
+                    upload_to_database_realtime(db_conn, product_data)
                 
                 # Save checkpoint every batch_size products
                 if (index + 1) % batch_size == 0:
@@ -370,8 +391,128 @@ def scrape_all_products(product_codes, auth_data, output_file='airr_product_data
             
         finally:
             browser.close()
+            # Close database connection
+            if db_conn:
+                try:
+                    db_conn.close()
+                    print("\n✓ Database connection closed")
+                except:
+                    pass
     
     return scraped_data
+
+def init_database():
+    """Initialize database connection and create table if needed"""
+    try:
+        DB_CONFIG = {
+            'host': os.getenv('SUPABASE_HOST'),
+            'dbname': os.getenv('SUPABASE_DBNAME'),
+            'user': os.getenv('SUPABASE_USER'),
+            'password': os.getenv('SUPABASE_PASSWORD'),
+            'port': os.getenv('SUPABASE_PORT'),
+            'sslmode': 'require'
+        }
+        
+        # Check if credentials are available
+        if not all(DB_CONFIG.values()):
+            print("⚠️  Database credentials not found - skipping live database updates")
+            return None
+        
+        conn = psycopg2.connect(**DB_CONFIG)
+        
+        # Create table if it doesn't exist
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS airr_product_availability (
+            id SERIAL PRIMARY KEY,
+            product_code VARCHAR(50) NOT NULL,
+            product_name TEXT,
+            location_name VARCHAR(100),
+            location_abbreviation VARCHAR(20),
+            location_id VARCHAR(20),
+            qty_available INTEGER DEFAULT 0,
+            qty_in_transit INTEGER DEFAULT 0,
+            qty_on_hand INTEGER DEFAULT 0,
+            qty_on_order INTEGER DEFAULT 0,
+            scrape_status VARCHAR(20),
+            error_message TEXT,
+            scraped_at TIMESTAMP,
+            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE INDEX IF NOT EXISTS idx_product_code ON airr_product_availability(product_code);
+        CREATE INDEX IF NOT EXISTS idx_location_id ON airr_product_availability(location_id);
+        CREATE INDEX IF NOT EXISTS idx_scraped_at ON airr_product_availability(scraped_at);
+        """
+        
+        with conn.cursor() as cur:
+            cur.execute(create_table_query)
+            conn.commit()
+        
+        print("✓ Database connected - live updates enabled\n")
+        return conn
+        
+    except Exception as e:
+        print(f"⚠️  Database connection failed: {e}")
+        print("   Continuing with CSV-only mode...\n")
+        return None
+
+def upload_to_database_realtime(db_conn, product_data):
+    """Upload a single product's data to database immediately"""
+    if not db_conn:
+        return  # Skip if no database connection
+    
+    try:
+        scraped_at = datetime.now()
+        rows_to_insert = []
+        
+        # Process all warehouse locations for this product
+        if product_data['availability_locations']:
+            for location in product_data['availability_locations']:
+                row = (
+                    product_data['product_code'],
+                    product_data['product_name'],
+                    location.get('location_name'),
+                    location.get('location_abbreviation'),
+                    location.get('location_id'),
+                    int(location.get('qty_available', 0)) if location.get('qty_available') else 0,
+                    int(location.get('qty_in_transit', 0)) if location.get('qty_in_transit') else 0,
+                    int(location.get('qty_on_hand', 0)) if location.get('qty_on_hand') else 0,
+                    int(location.get('qty_on_order', 0)) if location.get('qty_on_order') else 0,
+                    product_data['scrape_status'],
+                    product_data.get('error_message'),
+                    scraped_at
+                )
+                rows_to_insert.append(row)
+        else:
+            # No locations - insert single row
+            row = (
+                product_data['product_code'],
+                product_data['product_name'],
+                None, None, None, None, None, None, None,
+                product_data['scrape_status'],
+                product_data.get('error_message'),
+                scraped_at
+            )
+            rows_to_insert.append(row)
+        
+        # Insert all rows for this product
+        insert_query = """
+        INSERT INTO airr_product_availability 
+        (product_code, product_name, location_name, location_abbreviation, location_id,
+         qty_available, qty_in_transit, qty_on_hand, qty_on_order,
+         scrape_status, error_message, scraped_at)
+        VALUES %s
+        """
+        
+        with db_conn.cursor() as cur:
+            execute_values(cur, insert_query, rows_to_insert)
+            db_conn.commit()
+        
+        print(f"    💾 Pushed {len(rows_to_insert)} rows to database")
+        
+    except Exception as e:
+        print(f"    ⚠️  Database upload failed: {e}")
+        # Don't fail the scrape if database upload fails
 
 def save_results(scraped_data, output_file, start_index=0):
     """Save scraped data to CSV - one row per product-location"""

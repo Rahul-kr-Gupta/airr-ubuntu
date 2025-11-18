@@ -65,11 +65,25 @@ Save: `Ctrl+X`, `Y`, `Enter`
 
 ### Step 4: Test Everything Works
 
+First, verify .env file is loaded correctly:
+```bash
+python3 test_env_loading.py
+```
+
+Should show: ✅ SUCCESS! All credentials loaded correctly from .env file
+
+Then run full system test:
 ```bash
 python3 test_setup.py
 ```
 
 Should show: ✅ ALL TESTS PASSED!
+
+**If .env test fails:**
+- Check .env file exists: `ls -la .env`
+- View .env content: `cat .env`
+- Make sure no extra spaces or quotes around values
+- Each line should be: `KEY=value` (no spaces around =)
 
 ### Step 5: Run the Scraper
 

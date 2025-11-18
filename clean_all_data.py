@@ -5,9 +5,12 @@ Use this before starting a fresh scrape
 """
 import os
 import psycopg2
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load environment variables from .env file in script directory
+env_path = Path(__file__).parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 def clean_files():
     """Remove local CSV and checkpoint files"""

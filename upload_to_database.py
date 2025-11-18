@@ -2,20 +2,29 @@
 import os
 import csv
 import psycopg2
+from pathlib import Path
 from psycopg2.extras import execute_values
 from dotenv import load_dotenv
 from datetime import datetime
 
-load_dotenv()
+# Load environment variables from .env file in script directory
+env_path = Path(__file__).parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 DB_CONFIG = {
-    'host': "aws-1-ap-south-1.pooler.supabase.com",
-    'dbname': "postgres",
-    'user': "postgres.odpysbkgdzwcnwkrwrsw",
-    'password': "IqxEqdiLbFJmEISw",
-    'port': 6543,
+    'host': os.getenv('SUPABASE_HOST'),
+    'dbname': os.getenv('SUPABASE_DBNAME'),
+    'user': os.getenv('SUPABASE_USER'),
+    'password': os.getenv('SUPABASE_PASSWORD'),
+    'port': os.getenv('SUPABASE_PORT'),
     'sslmode': 'require'
 }
+
+# Debug: Check if database credentials were loaded
+if not all(DB_CONFIG.values()):
+    print(f"⚠️  WARNING: Database credentials not found in .env file!")
+    print(f"   Expected location: {env_path.absolute()}")
+    print(f"   Missing credentials: {[k for k, v in DB_CONFIG.items() if not v]}\n")
 
 CSV_FILE = 'airr_product_data.csv'
 TABLE_NAME = 'airr_product_availability'

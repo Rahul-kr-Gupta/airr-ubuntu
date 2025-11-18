@@ -2,15 +2,23 @@ import os
 import json
 import subprocess
 import sys
+from pathlib import Path
 from playwright.sync_api import sync_playwright
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from .env file in script directory
+env_path = Path(__file__).parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # Get credentials from environment variables
-USERNAME = "WEBBARRY"
-PASSWORD = "Petfood#123"
+USERNAME = os.getenv('airr_USERNAME')
+PASSWORD = os.getenv('airr_PASSWORD')
+
+# Debug: Check if credentials were loaded
+if not USERNAME or not PASSWORD:
+    print(f"⚠️  WARNING: Credentials not found in .env file!")
+    print(f"   Expected location: {env_path.absolute()}")
+    print(f"   Please ensure .env file contains airr_USERNAME and airr_PASSWORD\n")
 
 def ensure_playwright_browsers():
     """Ensure Playwright browsers are installed"""
