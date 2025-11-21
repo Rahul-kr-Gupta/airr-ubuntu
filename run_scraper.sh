@@ -10,6 +10,8 @@ echo ""
 # Change to the script directory
 cd "$(dirname "$0")"
 
+source venv/bin/activate
+
 # Check if Python 3 is installed
 if ! command -v python3 &> /dev/null; then
     echo "ERROR: Python 3 is not installed"
